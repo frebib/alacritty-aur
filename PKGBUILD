@@ -12,22 +12,30 @@ makedepends=('rust' 'cargo' 'cmake' 'fontconfig' 'ncurses' 'desktop-file-utils' 
 checkdepends=('ttf-dejavu') # for monospace fontconfig test
 provides=('alacritty')
 conflicts=('alacritty')
-source=("$_pkgname::git+https://github.com/alacritty/alacritty.git")
-sha256sums=('SKIP')
+source=("$_pkgname::git+https://github.com/alacritty/alacritty.git"
+        "winit::git+https://github.com/frebib/winit.git#branch=x11-dpi-reload")
+sha256sums=('SKIP'
+            'SKIP')
 
 pkgver() {
 	cd $_pkgname/alacritty
 	echo "$(grep '^version =' Cargo.toml|head -n1|cut -d\" -f2|cut -d\- -f1).$(git rev-list --count HEAD).g$(git rev-parse --short HEAD)"
 }
 
+prepare() {
+	cd $_pkgname
+	printf "\n[patch.crates-io]\nwinit = { path = '$srcdir/winit' }" >> Cargo.toml
+	cargo update -p winit
+}
+
 build(){
-  cd "$_pkgname"
-  env CARGO_INCREMENTAL=0 cargo build --release --locked
+	cd "$_pkgname"
+	env CARGO_INCREMENTAL=0 cargo build --release --locked
 }
 
 check(){
-  cd "$_pkgname"
-  env CARGO_INCREMENTAL=0 cargo test --release
+	cd "$_pkgname"
+	env CARGO_INCREMENTAL=0 cargo test --release
 }
 
 package_alacritty-git() {
